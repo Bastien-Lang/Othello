@@ -22,8 +22,13 @@ class Board:
     # --- Initialisation / copie ----------------------------------------------
     def reset(self) -> None:
         """Vide le plateau et place la position de départ (4 pions au centre)."""
-        raise NotImplementedError
-
+        self.grid.fill(EMPTY)
+        mid = self.size // 2
+        self.grid[mid - 1, mid - 1] = WHITE
+        self.grid[mid, mid] = WHITE
+        self.grid[mid - 1, mid] = BLACK
+        self.grid[mid, mid - 1] = BLACK
+        
     def copy(self) -> Board:
         """Copie indépendante du plateau (utile pour l'IA : explorer sans modifier l'original)."""
         raise NotImplementedError

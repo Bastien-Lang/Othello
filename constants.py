@@ -29,4 +29,4 @@ MaybeMove = Optional[Move]      # None = le joueur passe son tour
 
 def opponent(color: int) -> int:
     """Retourne la couleur adverse."""
-    raise NotImplementedError
+    return -color
