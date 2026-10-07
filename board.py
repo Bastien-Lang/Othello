@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from constants import BOARD_SIZE, EMPTY, BLACK, WHITE, DIRECTIONS, Move
+from constants import BOARD_SIZE, EMPTY, BLACK, WHITE, DIRECTIONS, Move, opponent
 
 
 class Board:
@@ -31,28 +31,51 @@ class Board:
         
     def copy(self) -> Board:
         """Copie indépendante du plateau (utile pour l'IA : explorer sans modifier l'original)."""
-        raise NotImplementedError
-
+        new_board = Board(self.size)
+        new_board.grid = self.grid.copy()
+        return new_board
     # --- Accès aux cases ------------------------------------------------------
     def is_on_board(self, row: int, col: int) -> bool:
-        raise NotImplementedError
+        """Vrai si les coordonnées sont valides (0 <= row, col < size)."""
+        return 0 <= row < self.size and 0 <= col < self.size
 
     def get(self, row: int, col: int) -> int:
         """Retourne le contenu d'une case (EMPTY, BLACK ou WHITE)."""
-        raise NotImplementedError
+        if not self.is_on_board(row, col):
+            raise IndexError(f"Case ({row}, {col}) hors plateau.")
+        return self.grid[row, col]
 
     def count(self, color: int) -> int:
         """Nombre de pions d'une couleur sur le plateau."""
-        raise NotImplementedError
+        return np.count_nonzero(self.grid == color) 
 
     # --- Règles : coups -------------------------------------------------------
     def get_flips(self, move: Move, color: int) -> list[Move]:
-        """Liste des cases qui seraient retournées si `color` jouait `move`.
+        row, col = move
 
-        Pour chaque direction : suite de pions adverses fermée par un pion de `color`.
-        Liste vide => le coup est illégal (ou la case est occupée).
-        """
-        raise NotImplementedError
+        # 1. La case doit exister et être vide
+        if not self.is_on_board(row, col) or self.grid[row, col] != EMPTY:
+            return []
+
+        enemy = opponent(color)
+        flips: list[Move] = []
+
+        # 2. On explore les 8 directions
+        for dr, dc in DIRECTIONS:
+            line: list[Move] = []          # pions adverses rencontrés dans CETTE direction
+            r, c = row + dr, col + dc      # première case voisine
+
+            # 3. On avance tant qu'on tombe sur des pions adverses
+            while self.is_on_board(r, c) and self.grid[r, c] == enemy:
+                line.append((r, c))
+                r += dr
+                c += dc
+
+            # 4. La ligne n'est capturée que si elle est fermée par un pion à nous
+            if line and self.is_on_board(r, c) and self.grid[r, c] == color:
+                flips.extend(line)
+
+        return flips
 
     def is_legal_move(self, move: Move, color: int) -> bool:
         raise NotImplementedError
