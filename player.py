@@ -9,6 +9,9 @@ from board import Board
 from constants import MaybeMove
 from view import ConsoleView
 
+from search import choose_minimax_move
+
+
 
 class Player(ABC):
     """Interface commune à tous les joueurs.
@@ -74,6 +77,13 @@ class RandomPlayer(Player):
         return random.choice(moves)
 
 
-# todo :
-# class AIPlayer(Player):
-#     def __init__(self, color, strategy, algorithm, depth, time_limit): ...
+
+class AIPlayer(Player):
+    """Joueur IA : délègue le choix du coup à un algorithme de recherche."""
+
+    def __init__(self, color: int, depth: int = 2, name: str = "IA") -> None:
+        super().__init__(color, name)
+        self.depth: int = depth
+
+    def choose_move(self, board: Board) -> MaybeMove:
+        return choose_minimax_move(board, self.color, self.depth)
