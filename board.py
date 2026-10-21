@@ -78,22 +78,38 @@ class Board:
         return flips
 
     def is_legal_move(self, move: Move, color: int) -> bool:
-        raise NotImplementedError
+        return len(self.get_flips(move, color)) > 0
 
     def get_legal_moves(self, color: int) -> list[Move]:
         """Tous les coups légaux de `color` dans la position actuelle."""
-        raise NotImplementedError
+        moves: list[Move] = []
+        for row in range(self.size):
+            for col in range(self.size):
+                if self.is_legal_move((row, col), color):
+                    moves.append((row, col))
+        return moves
+        
 
     def has_legal_move(self, color: int) -> bool:
-        raise NotImplementedError
+        """renvoie le premier coup légal dans la position actuelle ou None sinon"""
+        return any(
+            self.is_legal_move((row, col), color)
+            for row in range(self.size)
+            for col in range(self.size)
+        )
 
     def apply_move(self, move: Move, color: int) -> list[Move]:
         """Joue le coup (pose le pion + retourne les pions capturés).
-
-        Retourne la liste des cases retournées (utile pour l'historique / annuler un coup).
+        Retourne la liste des cases retournées (pour l'historique / annuler un coup).
         Lève une ValueError si le coup est illégal.
         """
-        raise NotImplementedError
+        flips = self.get_flips(move, color)
+        if not flips:
+            raise ValueError(f"Coup illégal : {move}")
+        self.grid[move] = color
+        for r, c in flips:
+            self.grid[r, c] = color
+        return flips
 
     # --- Règles : fin de partie / score --------------------------------------
     def is_game_over(self) -> bool:
