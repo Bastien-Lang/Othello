@@ -43,14 +43,15 @@ class Board:
         """Retourne le contenu d'une case (EMPTY, BLACK ou WHITE)."""
         if not self.is_on_board(row, col):
             raise IndexError(f"Case ({row}, {col}) hors plateau.")
-        return self.grid[row, col]
+        return int(self.grid[row, col])
 
     def count(self, color: int) -> int:
-        """Nombre de pions d'une couleur sur le plateau."""
-        return np.count_nonzero(self.grid == color) 
+        """Nombre de pions d'une couleur sur le plateau. (créé un tableau de True/False puis somme les True)"""
+        return int((self.grid == color).sum())
 
     # --- Règles : coups -------------------------------------------------------
     def get_flips(self, move: Move, color: int) -> list[Move]:
+        """cases retournées si color joue move, liste vide si le coup est illégal"""
         row, col = move
 
         # 1. La case doit exister et être vide
@@ -81,7 +82,7 @@ class Board:
         return len(self.get_flips(move, color)) > 0
 
     def get_legal_moves(self, color: int) -> list[Move]:
-        """Tous les coups légaux de `color` dans la position actuelle."""
+        """Tous les coups légaux de color dans la position actuelle."""
         moves: list[Move] = []
         for row in range(self.size):
             for col in range(self.size):
@@ -91,7 +92,7 @@ class Board:
         
 
     def has_legal_move(self, color: int) -> bool:
-        """renvoie le premier coup légal dans la position actuelle ou None sinon"""
+        """renvoie True si color a au moins un coup légal dans la position actuelle (s'arrête dès le premier trouvé)"""
         return any(
             self.is_legal_move((row, col), color)
             for row in range(self.size)
@@ -114,21 +115,30 @@ class Board:
     # --- Règles : fin de partie / score --------------------------------------
     def is_game_over(self) -> bool:
         """Vrai si aucun des deux joueurs ne peut jouer (plateau plein ou blocage)."""
-        raise NotImplementedError
+        return not self.has_legal_move(BLACK) and not self.has_legal_move(WHITE)
 
     def get_score(self) -> dict[int, int]:
         """Retourne {BLACK: nb_noirs, WHITE: nb_blancs}."""
-        raise NotImplementedError
+        return {BLACK: self.count(BLACK), WHITE: self.count(WHITE)}
 
     def get_winner(self) -> int:
         """BLACK, WHITE, ou EMPTY en cas d'égalité (à appeler en fin de partie)."""
-        raise NotImplementedError
+        score = self.get_score()
+        if score[BLACK] > score[WHITE]:
+            return BLACK
+        if score[WHITE] > score[BLACK]:
+            return WHITE
+        return EMPTY   # égalité
 
     # --- Utilitaires (préparent l'IA) ----------------------------------------
     def to_key(self) -> bytes:
         """Représentation hachable de la position (clé de la future table de transposition)."""
-        raise NotImplementedError
+        return self.grid.tobytes()
 
     def __str__(self) -> str:
         """Représentation texte brute du plateau (le rendu soigné est dans view.py)."""
-        raise NotImplementedError
+        symbols = {EMPTY: ".", BLACK: "B", WHITE: "W"}
+        return "\n".join(
+            " ".join(symbols[int(value)] for value in row)
+            for row in self.grid
+        )
