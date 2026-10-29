@@ -1,13 +1,12 @@
-"""Tests Minimax : python -m unittest test_search -v (Python avec NumPy)."""
+"""Tests Minimax : python -m unittest test_minmax -v (Python avec NumPy)."""
 
 import unittest
 from unittest.mock import patch
 
-import search
 from board import Board
 from constants import BLACK, WHITE
 from player import AIPlayer
-from search import MinimaxEngine, choose_minimax_move, evaluate, minimax
+from minmax import MinimaxEngine, choose_minimax_move, minimax
 
 
 def reference(board, depth, turn, ai):
@@ -141,18 +140,18 @@ class MinimaxTests(unittest.TestCase):
         board = Board(4)
         expected = MinimaxEngine().search(board, WHITE, 1)
         clock = [0.0]
-        real_minimax = search.minimax
+        engine = MinimaxEngine()
+        real_minimax = engine._minimax
 
         def expire_in_second_iteration(*args, **kwargs):
             # Expire pendant le premier sous-arbre du niveau 2, après qu'une
             # itération complète ait publié son résultat. Pas de sleep fragile.
-            if kwargs['_context'].stats.completed_depth == 1:
+            if engine.stats.completed_depth == 1:
                 clock[0] = 2.0
             return real_minimax(*args, **kwargs)
 
-        engine = MinimaxEngine()
-        with patch('search.perf_counter', side_effect=lambda: clock[0]), \
-                patch('search.minimax', side_effect=expire_in_second_iteration):
+        with patch('minmax.perf_counter', side_effect=lambda: clock[0]), \
+                patch.object(engine, '_minimax', side_effect=expire_in_second_iteration):
             result = engine.search(board, WHITE, 4, time_limit=1.0)
         self.assertTrue(result.stats.timed_out)
         self.assertEqual(result.stats.completed_depth, 1)
@@ -168,7 +167,7 @@ class MinimaxTests(unittest.TestCase):
         # Le moteur doit terminer le niveau 3 et obtenir la valeur de référence,
         # sans annoncer de time-out. Ce test ne mesure pas un temps réel.
         board = Board(4)
-        with patch('search.perf_counter', return_value=0.0):
+        with patch('minmax.perf_counter', return_value=0.0):
             result = MinimaxEngine().search(board, WHITE, 3, time_limit=1)
         self.assertFalse(result.stats.timed_out)
         self.assertEqual(result.stats.completed_depth, 3)

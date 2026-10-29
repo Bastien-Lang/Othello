@@ -9,7 +9,7 @@ from board import Board
 from constants import MaybeMove
 from view import ConsoleView
 
-from search import MinimaxEngine, SearchResult
+from minmax import MinimaxEngine, SearchResult
 
 
 

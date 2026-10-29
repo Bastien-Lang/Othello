@@ -36,7 +36,8 @@ def evaluate(board: Board, ai_color: int) -> int:
 
 @dataclass
 class SearchStats:
-    """Mesures d'un choix de coup, cumulées sur toutes ses itérations."""
+    """Mesures d'un choix de coup, cumulées sur toutes ses itérations.
+        Cette classe regroupe les statistiques d’une recherche"""
 
     nodes: int = 0              # Appels récursifs visités, cache compris.
     cache_hits: int = 0         # Résultats retrouvés sans recalcul des enfants.
@@ -44,6 +45,10 @@ class SearchStats:
     elapsed_seconds: float = 0.0
     timed_out: bool = False
 
+"""Cette classe rassemble le résultat d’une décision :
+- move : le coup choisi ;
+- score : sa valeur calculée ;
+- stats : les mesures de la recherche."""
 
 @dataclass
 class SearchResult:
