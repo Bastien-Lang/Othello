@@ -9,7 +9,7 @@ from board import Board
 from constants import MaybeMove
 from view import ConsoleView
 
-from search import choose_minimax_move
+from search import MinimaxEngine, SearchResult
 
 
 
@@ -81,9 +81,24 @@ class RandomPlayer(Player):
 class AIPlayer(Player):
     """Joueur IA : délègue le choix du coup à un algorithme de recherche."""
 
-    def __init__(self, color: int, depth: int = 2, name: str = "IA") -> None:
+    def __init__(self, color: int, depth: int = 2, name: str = "IA",
+                 *, time_limit: float | None = None) -> None:
         super().__init__(color, name)
+        if not isinstance(depth, int) or depth < 1:
+            raise ValueError("La profondeur doit être un entier positif.")
+        # depth compte les demi-coups : utiliser 2 * profondeur_tp pour la
+        # convention du sujet. None conserve une recherche sans délai.
         self.depth: int = depth
+        self.time_limit = time_limit
+        # Chaque joueur crée SON moteur : deux IA ne partagent pas leur cache.
+        # L'objet reste vivant entre les tours pour réutiliser les sous-arbres.
+        self.engine = MinimaxEngine()
+        self.last_result: SearchResult | None = None
 
     def choose_move(self, board: Board) -> MaybeMove:
-        return choose_minimax_move(board, self.color, self.depth)
+        self.last_result = self.engine.search(
+            board, self.color, self.depth, self.time_limit
+        )
+        # Game attend seulement le coup ; les mesures restent consultables
+        # dans last_result.stats pour les expériences et le rapport du TP.
+        return self.last_result.move
