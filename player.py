@@ -10,6 +10,7 @@ from constants import MaybeMove
 from view import ConsoleView
 
 from minmax import MinimaxEngine, SearchResult
+from alphabeta import AlphaBetaEngine
 
 
 
@@ -84,7 +85,8 @@ class AIPlayer(Player):
     """Joueur IA : délègue le choix du coup à un algorithme de recherche."""
 
     def __init__(self, color: int, depth: int = 2, name: str = "IA",
-                 *, time_limit: float | None = None) -> None:
+                 *, time_limit: float | None = None,
+                 algorithm: str = "minimax") -> None:
         super().__init__(color, name)
         if not isinstance(depth, int) or depth < 1:
             raise ValueError("La profondeur doit être un entier positif.")
@@ -94,7 +96,10 @@ class AIPlayer(Player):
         self.time_limit = time_limit
         # Chaque joueur crée SON moteur : deux IA ne partagent pas leur cache.
         # L'objet reste vivant entre les tours pour réutiliser les sous-arbres.
-        self.engine = MinimaxEngine()
+        engines = {"minimax": MinimaxEngine, "alphabeta": AlphaBetaEngine}
+        if algorithm not in engines:
+            raise ValueError("Algorithme inconnu : choisir 'minimax' ou 'alphabeta'.")
+        self.engine = engines[algorithm]()
         self.last_result: SearchResult | None = None
 
     def choose_move(self, board: Board) -> MaybeMove:

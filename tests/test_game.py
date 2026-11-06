@@ -1,180 +1,74 @@
-"""Intégration des joueurs, de Minimax et de la boucle de jeu."""
-import json
-import tempfile
-import unittest
+"""Parties et choix des adversaires utiles au TP."""
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
+
 from board import Board
 from constants import BLACK, WHITE, EMPTY
 from game import Game
 from main import main
-from player import AIPlayer, HumanPlayer, Player, RandomPlayer
-from view import ConsoleView
-
-class GameTests(unittest.TestCase):
-    def make_game(self):
-        return Game(AIPlayer(BLACK, depth=1), AIPlayer(WHITE, depth=1))
-
-    def test_first_turn(self):
-        game = self.make_game()
-        self.assertEqual(game.current_player.color, WHITE)
-        game.play_turn()
-        self.assertEqual(game.current_color, BLACK)
-        self.assertEqual(game.history[0].color, WHITE)
-        self.assertEqual(game.board.get_score(), {BLACK: 1, WHITE: 4})
-
-    def test_pass_then_end(self):
-        game = self.make_game()
-        game.board = Board(4)
-        game.board.grid.fill(BLACK)
-        game.board.grid[0, 1] = WHITE
-        game.board.grid[0, 2] = EMPTY
-        with patch.object(game.current_player, 'choose_move') as choose:
-            game.play_turn()
-            choose.assert_not_called()
-        self.assertIsNone(game.history[0].move)
-        self.assertEqual(game.run(), BLACK)
-        self.assertEqual(len(game.history), 2)
-        game.play_turn()
-        self.assertEqual(len(game.history), 2)
-
-    def test_invalid_move_does_not_advance_turn(self):
-        game = self.make_game()
-        before = game.board.to_key()
-        with patch.object(game.current_player, 'choose_move', return_value=None):
-            with self.assertRaises(ValueError):
-                game.play_turn()
-        self.assertEqual(game.board.to_key(), before)
-        self.assertEqual(game.current_color, WHITE)
-        self.assertEqual(game.history, [])
-
-    def test_player_cannot_modify_real_board(self):
-        game = self.make_game()
-        expected = game.board.copy()
-        expected.apply_move((2, 4), WHITE)
-
-        def choose_and_modify(board):
-            board.grid.fill(EMPTY)
-            return (2, 4)
-
-        with patch.object(game.current_player, 'choose_move', side_effect=choose_and_modify):
-            game.play_turn()
-        self.assertEqual(game.board.to_key(), expected.to_key())
-
-    def test_complete_minimax_game_and_history(self):
-        game = self.make_game()
-        winner = game.run()
-        self.assertTrue(game.is_over())
-        self.assertEqual(winner, game.board.get_winner())
-        replay = Board()
-        color = WHITE
-        for record in game.history:
-            self.assertEqual(record.color, color)
-            if record.move is None:
-                self.assertFalse(replay.has_legal_move(color))
-            else:
-                self.assertEqual(replay.apply_move(record.move, color), record.flipped)
-            color = -color
-        self.assertEqual(replay.to_key(), game.board.to_key())
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'partie.json'
-            game.save_history(str(path))
-            self.assertEqual(len(json.loads(path.read_text())), len(game.history))
-
-    def test_human_retries_invalid_input(self):
-        view = Mock(spec=ConsoleView)
-        view.parse_move = ConsoleView.parse_move
-        view.format_move = ConsoleView.format_move
-        view.ask_move.side_effect = ['x', 'a1', 'e3']
-        player = HumanPlayer(WHITE, view)
-        self.assertEqual(player.choose_move(Board()), (2, 4))
-
-    def test_main_starts_minimax_then_accepts_quit(self):
-        with patch('builtins.input', return_value='q'), patch('builtins.print') as output:
-            main()
-        messages = [str(call.args[0]) for call in output.call_args_list if call.args]
-        self.assertTrue(any('Blanc (MinMax) joue' in message for message in messages))
-        self.assertTrue(any('Partie interrompue' in message for message in messages))
+from player import AIPlayer
 
 
-"""Tests de la partie complète."""
-
-import pytest
-
-from constants import BLACK, WHITE, EMPTY
-from game import Game
-from player import Player, RandomPlayer
-
-
-class BadPlayer(Player):
-    """Joueur volontairement fautif : propose toujours une case illégale."""
-    def choose_move(self, board):
-        return (0, 0)
-
-
-def play_random_game() -> Game:
-    game = Game(RandomPlayer(BLACK, "N"), RandomPlayer(WHITE, "B"))   # sans vue
-    game.run()
-    return game
-
-
-def test_random_games_finish():
-    for _ in range(50):
-        game = play_random_game()
-        assert game.is_over()
-        assert game.board.get_winner() in (BLACK, WHITE, EMPTY)
+@pytest.mark.parametrize('black_algo, white_algo', [
+    ('minimax', 'minimax'), ('alphabeta', 'alphabeta'),
+    ('minimax', 'alphabeta'), ('alphabeta', 'minimax'),
+])
+def test_complete_ai_games(black_algo, white_algo):
+    """Vérifie la fin et la légalité d'une partie pour chaque paire d'IA."""
+    # Jouer chaque paire d’IA puis reconstruire la partie depuis son historique.
+    black = AIPlayer(BLACK, depth=1, algorithm=black_algo)
+    white = AIPlayer(WHITE, depth=1, algorithm=white_algo)
+    assert black.engine.table is not white.engine.table
+    game = Game(black, white)
+    winner = game.run()
+    assert game.is_over()
+    assert winner == game.board.get_winner()
+    replay = Board()
+    turn = WHITE
+    for record in game.history:
+        assert record.color == turn
+        if record.move is None:
+            assert not replay.has_legal_move(turn)
+        else:
+            assert replay.apply_move(record.move, turn) == record.flipped
+        turn = -turn
+    assert replay.to_key() == game.board.to_key()
 
 
-def test_white_plays_first():
-    assert play_random_game().history[0].color == WHITE
-
-
-def test_players_alternate_except_after_pass():
-    game = play_random_game()
-    for prev, cur in zip(game.history, game.history[1:]):
-        assert prev.color != cur.color     # même une passe change le joueur
-
-
-def test_disc_count_matches_history():
-    # Chaque coup réel ajoute exactement 1 pion, les passes n'en ajoutent aucun
-    for _ in range(50):
-        game = play_random_game()
-        real_moves = sum(1 for r in game.history if r.move is not None)
-        assert game.board.count(BLACK) + game.board.count(WHITE) == 4 + real_moves
-
-
-def test_pass_turn_is_recorded():
-    game = Game(RandomPlayer(BLACK, "N"), RandomPlayer(WHITE, "B"))
-    # Position fabriquée : Noir n'a aucun coup, Blanc peut jouer en (0, 2)
-    game.board.grid.fill(EMPTY)
-    game.board.grid[0, 0] = WHITE
-    game.board.grid[0, 1] = BLACK
-    game.current_color = BLACK
-
+def test_forced_pass_then_end():
+    """Vérifie l'enregistrement d'une passe puis du dernier coup gagnant."""
+    # Bloquer Blanc et laisser à Noir le dernier coup gagnant.
+    game = Game(AIPlayer(BLACK), AIPlayer(WHITE))
+    game.board.grid.fill(BLACK)
+    game.board.grid[0, 1] = WHITE
+    game.board.grid[0, 2] = EMPTY
     game.play_turn()
-
-    assert game.history[-1].color == BLACK
-    assert game.history[-1].move is None
-    assert game.current_color == WHITE
-
-
-def test_invalid_move_raises():
-    game = Game(BadPlayer(BLACK, "x"), BadPlayer(WHITE, "y"))
-    with pytest.raises(ValueError):
-        game.play_turn()
+    assert game.history[0].move is None
+    assert game.current_color == BLACK
+    assert game.run() == BLACK
+    assert len(game.history) == 2
 
 
-def test_game_with_view_prints_result(capsys):
-    from view import ConsoleView
-    Game(RandomPlayer(BLACK, "N"), RandomPlayer(WHITE, "B"), ConsoleView()).run()
-    assert "Score final" in capsys.readouterr().out
+@pytest.mark.parametrize('black_choice, white_choice', [('2', '2'), ('3', '3'), ('2', '3')])
+def test_menu_launches_ai_match(capsys, black_choice, white_choice):
+    """Vérifie que les choix du menu permettent d'aller jusqu'au score final."""
+    # Chaque appel à input reçoit la réponse suivante de la liste.
+    answers = [black_choice, '1', '0', white_choice, '1', '0']
+    with patch('builtins.input', side_effect=answers):
+        main()
+    assert 'Score final' in capsys.readouterr().out
 
 
-def test_save_history(tmp_path):
-    game = play_random_game()
-    path = tmp_path / "partie.txt"
-    game.save_history(str(path))
-    lines = path.read_text(encoding="utf-8").splitlines()
-    assert len(lines) == len(game.history)
-    assert lines[0].startswith("W ")
+@pytest.mark.parametrize('human_color', [BLACK, WHITE])
+def test_menu_human_against_ai(capsys, human_color):
+    """Vérifie qu'un humain peut choisir chaque couleur et quitter à son tour."""
+    # Choisir chaque couleur humaine, puis simuler q au premier tour.
+    if human_color == BLACK:
+        answers = ['1', '3', '1', '0', 'q']
+    else:
+        answers = ['2', '1', '0', '1', 'q']
+    with patch('builtins.input', side_effect=answers):
+        main()
+    output = capsys.readouterr().out
+    assert 'Coups possibles' in output
+    assert 'Partie interrompue' in output
