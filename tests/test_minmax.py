@@ -1,4 +1,4 @@
-"""Tests Minimax : python -m unittest test_minmax -v (Python avec NumPy)."""
+"""Tests Minimax : python -m unittest tests.test_minmax -v (Python avec NumPy)."""
 
 import unittest
 from unittest.mock import patch

@@ -1,4 +1,4 @@
-"""Joueurs : classe abstraite + implémentations (humain, aléatoire, IA plus tard)."""
+"""Joueurs : classe abstraite et joueurs humain, aléatoire et Minimax."""
 
 from __future__ import annotations
 
@@ -53,6 +53,8 @@ class HumanPlayer(Player):
         while True:
             #Texte tapé par l'utilisateur
             text = self.view.ask_move(self.name)
+            if text.strip().lower() in ("q", "quitter", "quit"):
+                raise KeyboardInterrupt
             #Conversion en (row, col), ou None si le format est invalide
             move = self.view.parse_move(text)
 

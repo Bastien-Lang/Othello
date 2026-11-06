@@ -61,7 +61,7 @@ class ConsoleView:
 
         letter, digit = text[0], text[1]
         col = ord(letter) - ord("a")
-        if not digit.isdigit():
+        if digit not in "12345678":
             return None
         row = int(digit) - 1
 
