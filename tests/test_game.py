@@ -1,15 +1,15 @@
-<<<<<<< HEAD
-﻿"""Intégration des joueurs, de Minimax et de la boucle de jeu."""
+"""Intégration des joueurs, de Minimax et de la boucle de jeu."""
 import json
 import tempfile
 import unittest
+import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
 from board import Board
 from constants import BLACK, WHITE, EMPTY
 from game import Game
 from main import main
-from player import AIPlayer, HumanPlayer
+from player import AIPlayer, HumanPlayer, Player, RandomPlayer
 from view import ConsoleView
 
 class GameTests(unittest.TestCase):
@@ -49,6 +49,19 @@ class GameTests(unittest.TestCase):
         self.assertEqual(game.current_color, WHITE)
         self.assertEqual(game.history, [])
 
+    def test_player_cannot_modify_real_board(self):
+        game = self.make_game()
+        expected = game.board.copy()
+        expected.apply_move((2, 4), WHITE)
+
+        def choose_and_modify(board):
+            board.grid.fill(EMPTY)
+            return (2, 4)
+
+        with patch.object(game.current_player, 'choose_move', side_effect=choose_and_modify):
+            game.play_turn()
+        self.assertEqual(game.board.to_key(), expected.to_key())
+
     def test_complete_minimax_game_and_history(self):
         game = self.make_game()
         winner = game.run()
@@ -83,7 +96,8 @@ class GameTests(unittest.TestCase):
         messages = [str(call.args[0]) for call in output.call_args_list if call.args]
         self.assertTrue(any('Blanc (MinMax) joue' in message for message in messages))
         self.assertTrue(any('Partie interrompue' in message for message in messages))
-=======
+
+
 """Tests de la partie complète."""
 
 import pytest
@@ -164,4 +178,3 @@ def test_save_history(tmp_path):
     lines = path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == len(game.history)
     assert lines[0].startswith("W ")
->>>>>>> ef4501c08295a27fe1d3b091eb7d112f1fcbc292

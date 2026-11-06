@@ -1,6 +1,6 @@
-<<<<<<< HEAD
-﻿"""Tests des règles du plateau."""
+"""Tests des règles du plateau."""
 import unittest
+import pytest
 from board import Board
 from constants import BLACK, WHITE, EMPTY
 
@@ -50,7 +50,8 @@ class BoardTests(unittest.TestCase):
         copy.apply_move((2, 4), WHITE)
         self.assertEqual(board.get_score(), {BLACK: 2, WHITE: 2})
         self.assertNotEqual(copy.to_key(), board.to_key())
-=======
+
+
 """Tests des règles du plateau."""
 
 import pytest
@@ -181,4 +182,3 @@ def test_str():
     assert len(lines) == 8
     assert lines[3] == ". . . W B . . ."
     assert lines[4] == ". . . B W . . ."
->>>>>>> ef4501c08295a27fe1d3b091eb7d112f1fcbc292
