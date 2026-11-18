@@ -1,4 +1,4 @@
-﻿# Othello — TP Intelligence artificielle
+# Othello — TP Intelligence artificielle
 
 Jeu en console avec humain, MinMax, alpha-bêta ou joueur aléatoire.
 Python 3.10 ou plus récent et NumPy sont requis.

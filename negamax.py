@@ -22,12 +22,15 @@ class NegamaxEngine(MinimaxEngine):
         self._check_time()
         self.stats.nodes += 1
         # Le point de vue est toujours current_color : pas besoin d'ai_color.
-        key = (board.size, board.to_key(), current_color, depth)
-        if key in self.table:
+        key = (board.size, board.to_key(), current_color)
+        cached = self._lookup(key, depth)
+        if cached is not None:
             self.stats.cache_hits += 1
-            return self.table[key]
+            return cached
 
+        stored_depth = depth
         if board.is_game_over():
+            stored_depth = float("inf")
             difference = evaluate(board, current_color)
             score = 0
             if difference > 0:
@@ -53,9 +56,7 @@ class NegamaxEngine(MinimaxEngine):
 
         # Un calcul interrompu ne doit pas être mémorisé comme terminé.
         self._check_time()
-        if len(self.table) >= self.max_entries and key not in self.table:
-            del self.table[next(iter(self.table))]
-        self.table[key] = score
+        self._store(key, stored_depth, score)
         return score
 
     def _best_move(self, board: Board, moves: list, ai_color: int,

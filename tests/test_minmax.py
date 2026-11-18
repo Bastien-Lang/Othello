@@ -133,7 +133,7 @@ def test_timeout_keeps_last_complete_iteration():
     assert result.stats.timed_out
     assert result.stats.completed_depth == 1
     assert (result.move, result.score) == (expected.move, expected.score)
-    assert all((key[-1] == 0 for key in engine.table))
+    assert all(depth == 0 for depth, _ in engine.table.values())
     resumed = engine.search(board, WHITE, 2)
     assert resumed.score == reference(board, 2, WHITE, WHITE)
 

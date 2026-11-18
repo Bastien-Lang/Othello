@@ -13,13 +13,12 @@ def test_matches_minimax_on_reachable_positions():
     board = Board(4)
     rng = random.Random(42)
     turn = WHITE
-    engine = NegamaxEngine()
     for _ in range(12):
         original = board.to_key()
         for color in (BLACK, WHITE):
             for depth in (1, 2, 3):
                 expected = MinimaxEngine().search(board, color, depth)
-                actual = engine.search(board, color, depth)
+                actual = NegamaxEngine().search(board, color, depth)
                 assert (actual.move, actual.score) == (expected.move, expected.score)
                 assert negamax(board, depth, color) == minimax(board, depth, color, color)
         assert board.to_key() == original
@@ -67,7 +66,7 @@ def test_cache_and_timeout():
     assert result.stats.timed_out
     assert result.stats.completed_depth == 1
     assert (result.move, result.score) == (expected.move, expected.score)
-    assert all(key[-1] == 0 for key in engine.table)
+    assert all(depth == 0 for depth, _ in engine.table.values())
     fallback = engine.search(board, WHITE, 3, time_limit=0)
     assert fallback.move in board.get_legal_moves(WHITE)
     assert fallback.score is None

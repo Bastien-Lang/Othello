@@ -16,14 +16,13 @@ def test_same_values_and_optimal_moves_on_reachable_positions():
     # Comparer coups et scores sur plusieurs positions reproductibles en 4x4.
     rng = random.Random(42)
     board = Board(4)
-    engine = AlphaBetaEngine()
     turn = WHITE
     for _ in range(12):
         original = board.to_key()
         for color in (BLACK, WHITE):
             for depth in (1, 2, 3):
                 expected = MinimaxEngine().search(board, color, depth)
-                actual = engine.search(board, color, depth)
+                actual = AlphaBetaEngine().search(board, color, depth)
                 assert (actual.move, actual.score) == (expected.move, expected.score)
                 if actual.move is not None:
                     child = board.copy()
@@ -58,7 +57,7 @@ def test_bound_is_not_saved(alpha, beta):
     board = Board(4)
     engine = AlphaBetaEngine()
     engine._alphabeta(board, 3, WHITE, WHITE, alpha, beta)
-    key = (board.size, board.to_key(), WHITE, WHITE, 3)
+    key = (board.size, board.to_key(), WHITE, WHITE)
     assert key not in engine.table
     assert engine._minimax(board, 3, WHITE, WHITE) == minimax(board, 3, WHITE, WHITE)
 
@@ -100,7 +99,7 @@ def test_timeout_keeps_last_completed_iteration():
     assert result.stats.timed_out
     assert result.stats.completed_depth == 1
     assert (result.move, result.score) == (expected.move, expected.score)
-    assert all(key[-1] == 0 for key in engine.table)
+    assert all(depth == 0 for depth, _ in engine.table.values())
     assert engine.search(board, WHITE, 3).score == minimax(board, 3, WHITE, WHITE)
 
 

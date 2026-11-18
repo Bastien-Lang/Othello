@@ -70,6 +70,22 @@ class MinimaxEngine:
         self.stats = SearchStats()
         self.last_result = None
 
+    def _lookup(self, key: tuple, depth: int):
+        """Valeur mémorisée avec au moins depth coups d'avance, sinon None."""
+        entry = self.table.get(key)
+        if entry is not None and entry[0] >= depth:
+            return entry[1]
+        return None
+
+    def _store(self, key: tuple, depth: float, score: float) -> None:
+        """Mémoriser (profondeur, valeur) sans écraser une analyse plus profonde."""
+        old = self.table.get(key)
+        if old is not None and old[0] > depth:
+            return
+        if len(self.table) >= self.max_entries and key not in self.table:
+            del self.table[next(iter(self.table))]  # Retirer la plus ancienne entrée.
+        self.table[key] = (depth, score)
+
     def _check_time(self) -> None:
         # L'horloge mesure une durée, indépendamment de l'heure civile.
         if self.deadline is not None and perf_counter() >= self.deadline:
@@ -81,15 +97,17 @@ class MinimaxEngine:
         self._check_time()
         self.stats.nodes += 1
 
-        # La grille seule ne suffit pas : joueur au trait, point de vue et
-        # profondeur restante peuvent changer le résultat. On réutilise une
-        # valeur seulement au même horizon. L'évaluation reste toujours absolue.
-        key = (board.size, board.to_key(), current_color, ai_color, depth)
-        if key in self.table:
+        # La clé ne contient pas la profondeur : elle est mémorisée avec la
+        # valeur, qui sert tant qu'elle a au moins autant de coups d'avance.
+        key = (board.size, board.to_key(), current_color, ai_color)
+        cached = self._lookup(key, depth)
+        if cached is not None:
             self.stats.cache_hits += 1
-            return self.table[key]
+            return cached
 
+        stored_depth = depth
         if board.is_game_over():
+            stored_depth = float("inf")  # Résultat certain, valable à toute profondeur.
             difference = evaluate(board, ai_color)
             score = 0
             if difference > 0:
@@ -126,11 +144,9 @@ class MinimaxEngine:
 
         # Point unique de sauvegarde : un nœud interrompu n'arrive jamais ici.
         # Les enfants terminés restent utilisables ; aucun parent partiel n'est
-        # présenté comme exact. Exact signifie « pour cet horizon de recherche ».
+        # présenté comme exact. Exact signifie « pour la profondeur enregistrée ».
         self._check_time()
-        if len(self.table) >= self.max_entries and key not in self.table:
-            del self.table[next(iter(self.table))]  # Retirer la plus ancienne entrée.
-        self.table[key] = score
+        self._store(key, stored_depth, score)
         return score
 
     def _best_move(self, board: Board, moves: list, ai_color: int,

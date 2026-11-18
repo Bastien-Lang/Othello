@@ -13,7 +13,7 @@ class ConsoleView:
     def show_board(self, board: Board, legal_moves: list[Move] | None = None) -> None:
         """Affiche la grille avec coordonnées (a-h / 1-8), éventuellement avec les coups légaux marqués."""
         legal = set(legal_moves or [])
-        letters = " ".join(chr(ord("a") + c) for c in range(board.size)) #
+        letters = " ".join(chr(ord("a") + c) for c in range(board.size))
         lines = ["  " + letters]
 
         for row in range(board.size):
