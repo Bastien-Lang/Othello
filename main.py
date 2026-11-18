@@ -18,12 +18,12 @@ def read_input(prompt: str) -> str:
 
 def choose_player(color: int, view: ConsoleView) -> Player:
     name = "Noir" if color == BLACK else "Blanc"
-    view.show_message(f"\nJoueur {name} : 1. Humain | 2. MinMax | 3. Alpha-bêta | 4. Aléatoire")
+    view.show_message(f"\nJoueur {name} : 1. Humain | 2. MinMax | 3. Alpha-bêta | 4. Aléatoire | 5. NegaMax")
     while True:
-        choice = read_input("Votre choix (1-4) : ")
-        if choice in ("1", "2", "3", "4"):
+        choice = read_input("Votre choix (1-5) : ")
+        if choice in ("1", "2", "3", "4", "5"):
             break
-        view.show_message("Choisissez un numéro de 1 à 4.")
+        view.show_message("Choisissez un numéro de 1 à 5.")
     if choice == "1":
         return HumanPlayer(color, view, name=f"{name} (Humain)")
     if choice == "4":
@@ -45,7 +45,12 @@ def choose_player(color: int, view: ConsoleView) -> Player:
         except ValueError:
             pass
         view.show_message("Entrez un nombre fini positif ou nul.")
-    algorithm, label = ("minimax", "MinMax") if choice == "2" else ("alphabeta", "Alpha-bêta")
+    algorithms = {
+        "2": ("minimax", "MinMax"),
+        "3": ("alphabeta", "Alpha-bêta"),
+        "5": ("negamax", "NegaMax"),
+    }
+    algorithm, label = algorithms[choice]
     return AIPlayer(color, depth=depth, name=f"{name} ({label})",
                     time_limit=None if seconds == 0 else seconds, algorithm=algorithm)
 

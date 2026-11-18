@@ -26,6 +26,7 @@ Au lancement, choisissez séparément le joueur noir puis le joueur blanc :
 2. MinMax
 3. Alpha-bêta
 4. Aléatoire
+5. NegaMax
 
 Toutes les combinaisons sont possibles : humain contre IA avec la couleur de
 votre choix, deux humains, deux algorithmes différents ou un algorithme contre

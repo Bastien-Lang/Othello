@@ -49,7 +49,7 @@ def test_forced_pass_then_end():
     assert len(game.history) == 2
 
 
-@pytest.mark.parametrize('black_choice, white_choice', [('2', '2'), ('3', '3'), ('2', '3')])
+@pytest.mark.parametrize('black_choice, white_choice', [('2', '2'), ('3', '3'), ('2', '3'), ('5', '5'), ('5', '2'), ('3', '5')])
 def test_menu_launches_ai_match(capsys, black_choice, white_choice):
     """Vérifie que les choix du menu permettent d'aller jusqu'au score final."""
     # Chaque appel à input reçoit la réponse suivante de la liste.
