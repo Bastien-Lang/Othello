@@ -89,7 +89,7 @@ class Board:
                 if self.is_legal_move((row, col), color):
                     moves.append((row, col))
         return moves
-        
+       
 
     def has_legal_move(self, color: int) -> bool:
         """renvoie True si color a au moins un coup légal dans la position actuelle (s'arrête dès le premier trouvé)"""
