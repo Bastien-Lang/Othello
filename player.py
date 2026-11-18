@@ -11,6 +11,7 @@ from view import ConsoleView
 
 from minmax import MinimaxEngine, SearchResult
 from alphabeta import AlphaBetaEngine
+from negamax import NegamaxEngine
 
 
 
@@ -96,9 +97,10 @@ class AIPlayer(Player):
         self.time_limit = time_limit
         # Chaque joueur crée SON moteur : deux IA ne partagent pas leur cache.
         # L'objet reste vivant entre les tours pour réutiliser les sous-arbres.
-        engines = {"minimax": MinimaxEngine, "alphabeta": AlphaBetaEngine}
+        engines = {"minimax": MinimaxEngine, "alphabeta": AlphaBetaEngine,
+                   "negamax": NegamaxEngine}
         if algorithm not in engines:
-            raise ValueError("Algorithme inconnu : choisir 'minimax' ou 'alphabeta'.")
+            raise ValueError("Algorithme inconnu : choisir 'minimax', 'alphabeta' ou 'negamax'.")
         self.engine = engines[algorithm]()
         self.last_result: SearchResult | None = None
 
